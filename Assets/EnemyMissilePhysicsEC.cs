@@ -7,7 +7,7 @@ public class EnemyMissilePhysicsEC : MonoBehaviour
     public Rigidbody rb;
 	private Vector3 rbtemp;
     private float time = 0.0f;
-    private float thrust = .9807f;
+    private float thrust = 10.0f*.9807f;
     private float gravity = -0.1622f;
     private bool active = false;
     public CapsulePhysics cp;
@@ -141,43 +141,41 @@ public class EnemyMissilePhysicsEC : MonoBehaviour
                 }
                 if (afterburnClone == null) afterburnClone = Instantiate(afterburn, transform.position, Quaternion.LookRotation(-(cp.transform.position - initialPosn).normalized, Vector3.up));
                 transform.rotation = Quaternion.LookRotation((cp.transform.position - transform.position).normalized, Vector3.up);
-                //-9.396868, -3.7209082, -8.406192
-                float Kp = 100.0f;
-                float Ki = 50.0f;
-                float Kd = 0.0f;
+                float kp = -497881.75f, ki = -710402.8f, kd = -400333.97f;
+                float Kp = kp;
+                float Ki = ki;
+                float Kd = kd;
                 Vector3 diff = cp.transform.position - transform.position;
+                float[] initialTheta = new float[2];
                 if (!doneOnce)
                 {
                     rb.velocity = thrust * Time.deltaTime * diff.normalized;
+                    initialTheta[0] = Mathf.Atan2((diff.z), (diff.x));
+                    initialTheta[1] = Mathf.Atan2((diff.y), (diff.x));
                 }
-                float angle1 = (float)((180.0 / Mathf.PI) * Mathf.Atan2((diff.z), (diff.x)));
-                float angle2 = (float)((180.0 / Mathf.PI) * Mathf.Atan2((diff.y), (diff.x)));
-                oldAngle1 = (float)((180.0 / Mathf.PI) * Mathf.Atan2((rb.velocity.z) , (rb.velocity.x)));
-                oldAngle2 = (float)((180.0 / Mathf.PI) * Mathf.Atan2((rb.velocity.y), (rb.velocity.x)));
+                float angle1 = (float)(Mathf.Atan2((diff.z), (diff.x)));
+                float angle2 = (float)(Mathf.Atan2((diff.y), (diff.x)));
 
-                float error = angle1 - oldAngle1;
-                float error2 = angle2 - oldAngle2;
-                error = (error > -45.0f) ? (error < 45.0f) ? error : 45.0f : -45.0f;
-                error2 = (error2 > -45.0f) ? (error2 < 45.0f) ? error2 : 45.0f : -45.0f;
-
+                float error = angle1;
+                float error2 = angle2;
+                error = error - initialTheta[0];
+                error2 = error2 - initialTheta[1];
+       
                 accumulation_of_error += error * Time.deltaTime;
-                accumulation_of_error = (accumulation_of_error > -45.0f) ? (accumulation_of_error < 45.0f) ? accumulation_of_error : 45.0f : -45.0f;
+                accumulation_of_error = (float)((accumulation_of_error < Mathf.PI / 8.0) ? (accumulation_of_error > -Mathf.PI / 8.0) ? accumulation_of_error : -Mathf.PI / 8.0 : Mathf.PI / 8.0);
                 derivative_of_error = (error - last_error) / Time.deltaTime;
                 last_error = error;
                 float output = (error * Kp) + (accumulation_of_error * Ki) + (derivative_of_error * Kd);
-                output = (output > -45.0f) ? (output < 45.0f) ? output : 45.0f : -45.0f;
-
                 accumulation_of_error2 += error2 * Time.deltaTime;
-                accumulation_of_error2 = (accumulation_of_error2 > -45.0f) ? (accumulation_of_error2 < 45.0f) ? accumulation_of_error2 : 45.0f : -45.0f;
+                accumulation_of_error2 = (float)((accumulation_of_error2 < Mathf.PI / 8.0) ? (accumulation_of_error2 > -Mathf.PI / 8.0) ? accumulation_of_error2 : -Mathf.PI / 8.0 : Mathf.PI / 8.0);
                 derivative_of_error2 = (error2 - last_error2) / Time.deltaTime;
                 last_error2 = error2;
                 float output2 = (error2 * Kp) + (accumulation_of_error2 * Ki) + (derivative_of_error2 * Kd);
-                output2 = (output2 > -45.0f) ? (output2 < 45.0f) ? output2 : 45.0f : -45.0f;
 
-                float pvx = thrust * (Mathf.Cos((Mathf.PI / 180.0f) * output2) * rb.velocity.x - Mathf.Sin((Mathf.PI / 180.0f) * output2) * rb.velocity.y) * Time.deltaTime;
-                float pvy = thrust * (Mathf.Sin((Mathf.PI / 180.0f) * output2) * rb.velocity.x + Mathf.Cos(output2) * rb.velocity.y) * Time.deltaTime;
-                float pvx2 =thrust * (Mathf.Cos((Mathf.PI / 180.0f) * output) * pvx - Mathf.Sin((Mathf.PI / 180.0f) * output) * rb.velocity.z) * Time.deltaTime;
-                float pvz = thrust * (Mathf.Sin((Mathf.PI / 180.0f) * output) * pvx + Mathf.Cos((Mathf.PI / 180.0f) * output) * rb.velocity.z) * Time.deltaTime;
+                float pvx = thrust * (Mathf.Cos(output2 + initialTheta[1]) - Mathf.Sin(output2 + initialTheta[1])) * Time.deltaTime;
+                float pvy = thrust * (Mathf.Sin(output2 + initialTheta[1]) + Mathf.Cos(output2 + initialTheta[1])) * Time.deltaTime;
+                float pvx2 =thrust * (Mathf.Cos(output + initialTheta[0]) * pvx - Mathf.Sin(output + initialTheta[0])) * Time.deltaTime;
+                float pvz = thrust * (Mathf.Sin(output + initialTheta[0]) * pvx + Mathf.Cos(output + initialTheta[0])) * Time.deltaTime;
 
                 
                 Vector3 missileDirection = new Vector3(pvx2, pvy, pvz);
