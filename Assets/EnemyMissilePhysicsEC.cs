@@ -125,8 +125,6 @@ public class EnemyMissilePhysicsEC : MonoBehaviour
             accumulation_of_error2 = 0.0f;
             derivative_of_error2 = 0.0f;
             last_error2 = 0.0f;
-            oldAngle1 = 0.0f;
-            oldAngle2 = 0.0f;
             closeness = 100000.0f;
             doneOnce = false;
         }
@@ -141,7 +139,7 @@ public class EnemyMissilePhysicsEC : MonoBehaviour
                 }
                 if (afterburnClone == null) afterburnClone = Instantiate(afterburn, transform.position, Quaternion.LookRotation(-(cp.transform.position - initialPosn).normalized, Vector3.up));
                 transform.rotation = Quaternion.LookRotation((cp.transform.position - transform.position).normalized, Vector3.up);
-                float kp = -497881.75f, ki = -710402.8f, kd = -400333.97f;
+                float kp = -26.714428f, ki = 73.656044f, kd = 103.96094f;
                 float Kp = kp;
                 float Ki = ki;
                 float Kd = kd;
